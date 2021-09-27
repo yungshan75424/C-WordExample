@@ -12,6 +12,8 @@ using Spire.Doc;
 using Spire.Doc.Documents;
 using DocumentFormat.OpenXml.Packaging;
 using WindowsFormsApp1.Service;
+using Microsoft.Office.Interop.Word;
+using iTextSharp.text.pdf;
 
 namespace WindowsFormsApp1
 {
@@ -140,7 +142,7 @@ namespace WindowsFormsApp1
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -175,6 +177,103 @@ namespace WindowsFormsApp1
                 package.SaveAs("D:\\Test1.docx").Close();
             }
         }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            Microsoft.Office.Interop.Word.Document wordDocument;
+            Microsoft.Office.Interop.Word.Application word = new Microsoft.Office.Interop.Word.Application();
+            wordDocument = word.Documents.Open("D:\\Test.docx");
+            wordDocument.TablesOfContents[1].Update();
+            wordDocument.ExportAsFixedFormat("D:\\Test.pdf", WdExportFormat.wdExportFormatPDF);
+            wordDocument.Close();
+            word.Quit();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            AddWatermark("D:\\Test.pdf", "D:\\Test_Watermark.pdf", "D:\\TKU-logo-12cm.jpg");
+        }
+
+        public void Watermark(string inputPath, string outputPath, string watermarkPath)
+        {
+            try
+            {
+                PdfReader pdfReader = new PdfReader(inputPath);
+                int numberOfPages = pdfReader.NumberOfPages;
+                FileStream outputStream = new FileStream(outputPath, FileMode.Create);
+                PdfStamper pdfStamper = new PdfStamper(pdfReader, outputStream);
+                PdfContentByte waterMarkContent;
+
+                string watermarkimagepath = watermarkPath;
+                iTextSharp.text.Image image = iTextSharp.text.Image.GetInstance(watermarkimagepath);
+
+                image.SetAbsolutePosition(255, 785);
+                for (int i = 1; i <= numberOfPages; i++)
+                {
+                    waterMarkContent = pdfStamper.GetUnderContent(i);
+                    waterMarkContent.AddImage(image);
+                }
+                pdfStamper.Close();
+                pdfReader.Close();
+            }
+            catch (Exception ex)
+            {                
+                throw ex;
+            }
+        }
+        public bool AddWatermark(string inputPath, string outputPath, string watermarkPath)
+        {
+            try
+            {
+                PdfReader pdfReader = new PdfReader(inputPath);
+                int numberOfPages = pdfReader.NumberOfPages;
+                FileStream outputStream = new FileStream(outputPath, FileMode.Create);
+                PdfStamper pdfStamper = new PdfStamper(pdfReader, outputStream);
+                PdfContentByte waterMarkContent;
+
+                iTextSharp.text.Image image = null;
+                if (string.IsNullOrEmpty(watermarkPath))
+                {
+                    Stream s = GetType().Assembly.GetManifestResourceStream("WatermarkTool.wm.png");
+                    image = iTextSharp.text.Image.GetInstance(s);
+                }
+                else
+                {
+                    image = iTextSharp.text.Image.GetInstance(watermarkPath);
+                }
+
+                // A4尺寸 595x842    圖片最左下角為(0,0)點
+                float imagesize_X = 159;
+                float imagesize_Y = 159;
+                float page_Size_X = 595;
+                float page_Size_Y = 842;
+
+                PdfGState pdfgstate = new PdfGState()
+                {
+                    FillOpacity = 0.4f,
+                    StrokeOpacity = 0.4f
+                };
+
+                image.ScaleAbsolute(imagesize_X, imagesize_X);
+                image.SetAbsolutePosition(((page_Size_X- imagesize_X)/2), ((page_Size_Y - imagesize_Y) / 2));    /*計算中心點*/
+                
+                for (int i = 1; i <= numberOfPages; i++)
+                {
+                    waterMarkContent = pdfStamper.GetUnderContent(i);
+                    waterMarkContent.SetGState(pdfgstate); //寫入入設定的透明度
+                    waterMarkContent.AddImage(image);
+                }
+                pdfStamper.Close();
+                pdfReader.Close();
+                outputStream.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
     }
     public class testdata
     {
