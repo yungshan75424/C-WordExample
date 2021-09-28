@@ -213,7 +213,8 @@ namespace WindowsFormsApp1
                 {
                     waterMarkContent = pdfStamper.GetUnderContent(i);
                     waterMarkContent.AddImage(image);
-                }
+                }                
+                pdfStamper.SetEncryption(true ,"test", "secret", PdfWriter.ALLOW_SCREENREADERS);
                 pdfStamper.Close();
                 pdfReader.Close();
             }
@@ -264,7 +265,7 @@ namespace WindowsFormsApp1
                     waterMarkContent.SetGState(pdfgstate); //寫入入設定的透明度
                     waterMarkContent.AddImage(image);
                 }
-
+                
                 pdfStamper.Close();
                 pdfReader.Close();
                 outputStream.Close();
@@ -279,34 +280,37 @@ namespace WindowsFormsApp1
         {
              try
              {
-                   PdfReader pdfReader = new PdfReader(inputPath);
-                   PdfStamper pdfStamper = new PdfStamper(pdfReader, new FileStream(outputPath, FileMode.Create));
-                   int total = pdfReader.NumberOfPages + 1;
-                   iTextSharp.text.Rectangle psize = pdfReader.GetPageSize(1);
-                   float width = psize.Width;
-                   float height = psize.Height;
-                   PdfContentByte waterMarkContent;
-                   BaseFont font = BaseFont.CreateFont("C:\\Windows\\fonts\\mingliu.ttc,0", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-                   PdfGState gs = new PdfGState();
-                   for (int i = 1; i < total; i++)
-                   {
-                       //在內容上方加水印（下方加水印參考上面圖片程式碼做法）
-                       waterMarkContent = pdfStamper.GetOverContent(i);
-                      //透明度
-                       gs.FillOpacity = 0.3f;
-                       waterMarkContent.SetGState(gs);
-                       //寫入文字
-                       waterMarkContent.BeginText();
-                       waterMarkContent.SetColorFill(BaseColor.GRAY);
-                       waterMarkContent.SetFontAndSize(font, 50);
-                       waterMarkContent.SetTextMatrix(0, 0);
-                       waterMarkContent.ShowTextAligned(Element.ALIGN_CENTER, text, width - 120, height - 120, 45);
-                       waterMarkContent.ShowTextAligned(Element.ALIGN_CENTER, text, width - 300, height - 300, 45);
-                       waterMarkContent.EndText();
-                   }
-                    pdfStamper.Close();
-                    pdfReader.Close();
-                    return true;
+                PdfReader pdfReader = new PdfReader(inputPath);
+                PdfStamper pdfStamper = new PdfStamper(pdfReader, new FileStream(outputPath, FileMode.Create));
+                int total = pdfReader.NumberOfPages + 1;
+                iTextSharp.text.Rectangle psize = pdfReader.GetPageSize(1);
+                float width = psize.Width;
+                float height = psize.Height;
+                PdfContentByte waterMarkContent;
+                BaseFont font = BaseFont.CreateFont("C:\\Windows\\fonts\\mingliu.ttc,0", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                PdfGState gs = new PdfGState();
+                pdfStamper.SetEncryption(true, "test", "secret", PdfWriter.ALLOW_SCREENREADERS);  /*寫入密碼*/
+
+                for (int i = 1; i < total; i++)
+                {
+                    //在內容上方加水印（下方加水印參考上面圖片程式碼做法）
+                    waterMarkContent = pdfStamper.GetOverContent(i);
+                    //透明度
+                    gs.FillOpacity = 0.3f;
+                    waterMarkContent.SetGState(gs);
+                    //寫入文字
+                    waterMarkContent.BeginText();
+                    waterMarkContent.SetColorFill(BaseColor.GRAY);
+                    waterMarkContent.SetFontAndSize(font, 50);
+                    waterMarkContent.SetTextMatrix(0, 0);
+                    waterMarkContent.ShowTextAligned(Element.ALIGN_CENTER, text, width - 120, height - 120, 45);
+                    waterMarkContent.ShowTextAligned(Element.ALIGN_CENTER, text, width - 300, height - 300, 45);
+                    waterMarkContent.EndText();
+                }
+                    
+                pdfStamper.Close();
+                pdfReader.Close();
+                return true;
              }
              catch (Exception ex)
              {
